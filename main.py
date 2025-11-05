@@ -919,7 +919,12 @@ async def automated_container_cleanup():
         containers_to_remove = []
 
         # Check each active request
-        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time, request_type in active_requests:            
+        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time, request_type in active_requests:
+            # Skip PUT_BACK requests - they should not be auto-deleted
+            if request_type == 'PUT_BACK':
+                logger.info(f"⏭️ SKIPPING: {serial_no} - PUT_BACK requests are not auto-deleted")
+                continue
+
             # Get current location from ERP
             current_location = await check_container_current_location(serial_no)
             
@@ -1111,6 +1116,11 @@ async def manual_container_cleanup():
 
         # Check each request
         for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time, request_type in active_requests:
+            # Skip PUT_BACK requests - they should not be auto-deleted
+            if request_type == 'PUT_BACK':
+                logger.info(f"⏭️ SKIPPING (manual cleanup): {serial_no} - PUT_BACK requests are not deleted")
+                continue
+
             try:
                 current_location = await check_container_current_location(serial_no)
                 
