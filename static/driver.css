@@ -291,6 +291,94 @@ th {
     width: auto;
 }
 
+/* Clickable barcode styling */
+.barcode-clickable {
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    position: relative;
+}
+
+.barcode-clickable:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+    filter: brightness(1.1);
+}
+
+.barcode-clickable:active {
+    transform: scale(1.05);
+}
+
+/* Add a subtle hint that the barcode is clickable */
+.barcode-clickable::after {
+    content: '\f002';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(0, 123, 255, 0.9);
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    pointer-events: none;
+}
+
+.barcode-clickable:hover::after {
+    opacity: 1;
+}
+
+/* Barcode modal image */
+.barcode-modal-img {
+    max-width: 100%;
+    height: auto;
+    max-height: 500px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    background: white;
+    padding: 20px;
+}
+
+/* Modal enhancements */
+#barcodeModal .modal-content {
+    border: none;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+}
+
+#barcodeModal .modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: white;
+    border-top-left-radius: var(--radius-xl);
+    border-top-right-radius: var(--radius-xl);
+    border: none;
+}
+
+#barcodeModal .modal-title {
+    font-weight: 600;
+}
+
+#barcodeModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#barcodeModal .modal-body {
+    background: var(--light-gray);
+}
+
+#barcodeModal .modal-footer {
+    border-top: 2px solid var(--border-color);
+    background: white;
+    border-bottom-left-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--radius-xl);
+}
+
 /* Table responsive wrapper */
 .table-responsive {
     width: 100%;

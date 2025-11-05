@@ -43,7 +43,13 @@ function createRowElement(data) {
         <td>${data.revision || ''}</td>
         <td>${data.quantity}</td>
         <td>${data.location}</td>
-        <td><img src="${getBarcodeUrl(data.location)}" alt="Barcode for ${data.location}" class="barcode-img"></td>
+        <td>
+            <img src="${getBarcodeUrl(data.location)}"
+                 alt="Barcode for ${data.location}"
+                 class="barcode-img barcode-clickable"
+                 onclick="showBarcodeModal('${data.location}', '${getBarcodeUrl(data.location)}')"
+                 title="Click to enlarge">
+        </td>
         <td>${data.deliver_to}</td>
         <td>
             <button class="delete-btn" onclick="handleDelete('${data.serial_no}', this)">
@@ -53,6 +59,50 @@ function createRowElement(data) {
     `;
 
     return row;
+}
+
+// Function to show barcode in a modal popup
+function showBarcodeModal(location, barcodeUrl) {
+    // Create modal HTML
+    const modalHTML = `
+        <div class="modal fade" id="barcodeModal" tabindex="-1" aria-labelledby="barcodeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="barcodeModalLabel">
+                            <i class="fas fa-qrcode me-2"></i>Location: ${location}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center p-4">
+                        <img src="${barcodeUrl}" alt="Barcode for ${location}" class="barcode-modal-img">
+                        <p class="mt-3 text-muted">Scan this QR code to navigate to location: <strong>${location}</strong></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove any existing barcode modal
+    const existingModal = document.getElementById('barcodeModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('barcodeModal'));
+    modal.show();
+
+    // Clean up modal from DOM when hidden
+    document.getElementById('barcodeModal').addEventListener('hidden.bs.modal', function () {
+        this.remove();
+    });
 }
 
 // Define the correct passcode (you can change this to your desired passcode)
