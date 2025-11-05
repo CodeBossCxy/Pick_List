@@ -36,6 +36,15 @@ function createRowElement(data) {
         row.style.borderLeft = '4px solid #0066cc';
     }
 
+    // Determine button type based on request type
+    const actionButton = isPickUp ?
+        `<button class="delete-btn" onclick="handleDelete('${data.serial_no}', this)">
+            <i class="fas fa-trash me-1"></i>Delete
+         </button>` :
+        `<button class="btn btn-success btn-sm" onclick="handleDone('${data.serial_no}', this)">
+            <i class="fas fa-check me-1"></i>Done
+         </button>`;
+
     row.innerHTML = `
         <td style="text-align: center;">${typeBadge}</td>
         <td>${displaySerial}</td>
@@ -52,9 +61,7 @@ function createRowElement(data) {
         </td>
         <td>${data.deliver_to}</td>
         <td>
-            <button class="delete-btn" onclick="handleDelete('${data.serial_no}', this)">
-                Delete
-            </button>
+            ${actionButton}
         </td>
     `;
 
@@ -216,45 +223,45 @@ function showPasscodePopup() {
 // Function to handle delete button click
 async function handleDelete(serialNo, button) {
     console.log(`🗑️ Delete button clicked for serial: ${serialNo}`);
-    
+
     // Show passcode popup and wait for validation
     const isPasscodeValid = await showPasscodePopup();
-    
+
     if (!isPasscodeValid) {
         console.log('❌ Delete cancelled - invalid passcode or user cancelled');
         return; // Exit without deleting
     }
-    
+
     console.log('✅ Passcode validated - hiding row immediately');
-    
+
     // Get row reference and hide it immediately after passcode validation
     const row = button.closest('tr');
     const originalOpacity = row.style.opacity;
     const originalRowHTML = row.innerHTML; // Store original content for potential restore
-    
+
     // Hide row immediately with visual feedback
     row.style.opacity = '0';
     row.style.transition = 'opacity 0.3s ease';
-    
+
     try {
         console.log('🌐 Making API call to delete request');
         const response = await fetch(`/api/requests/${serialNo}`, {
             method: 'DELETE'
         });
-        
+
         if (response.ok) {
             console.log('✅ Delete request successful - removing row from DOM');
-            
+
             // Remove row from DOM after successful API call
             setTimeout(() => {
                 row.remove();
             }, 300); // Short delay to complete the fade animation
-            
+
             // Show success message
             showAlert('Success', `Request for container ${serialNo} has been deleted.`, 'success');
         } else {
             console.error('❌ Failed to delete request - server error, restoring row');
-            
+
             // Restore row visibility if API call failed
             row.style.opacity = originalOpacity || '1';
             showAlert('Error', 'Failed to delete request. Please try again.', 'danger');
@@ -262,10 +269,55 @@ async function handleDelete(serialNo, button) {
     } catch (error) {
         console.error('❌ Error deleting request:', error);
         console.log('🔄 Restoring row due to API error');
-        
+
         // Restore row visibility if API call failed
         row.style.opacity = originalOpacity || '1';
         showAlert('Error', 'Error deleting request. Please try again.', 'danger');
+    }
+}
+
+// Function to mark PUT_BACK request as done (no passcode required)
+async function handleDone(serialNo, button) {
+    console.log(`✅ Done button clicked for serial: ${serialNo}`);
+
+    // Get row reference and hide it immediately
+    const row = button.closest('tr');
+    const originalOpacity = row.style.opacity;
+
+    // Hide row immediately with visual feedback
+    row.style.opacity = '0';
+    row.style.transition = 'opacity 0.3s ease';
+
+    try {
+        console.log('🌐 Making API call to mark request as done');
+        const response = await fetch(`/api/requests/${serialNo}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            console.log('✅ Request marked as done - removing row from DOM');
+
+            // Remove row from DOM after successful API call
+            setTimeout(() => {
+                row.remove();
+            }, 300); // Short delay to complete the fade animation
+
+            // Show success message
+            showAlert('Success', `Put back request for container ${serialNo} completed.`, 'success');
+        } else {
+            console.error('❌ Failed to complete request - server error, restoring row');
+
+            // Restore row visibility if API call failed
+            row.style.opacity = originalOpacity || '1';
+            showAlert('Error', 'Failed to complete request. Please try again.', 'danger');
+        }
+    } catch (error) {
+        console.error('❌ Error completing request:', error);
+        console.log('🔄 Restoring row due to API error');
+
+        // Restore row visibility if API call failed
+        row.style.opacity = originalOpacity || '1';
+        showAlert('Error', 'Error completing request. Please try again.', 'danger');
     }
 }
 

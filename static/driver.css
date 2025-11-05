@@ -213,6 +213,22 @@ th {
     transform: none;
 }
 
+/* Done button styling for PUT_BACK requests */
+.btn-success {
+    background: linear-gradient(135deg, var(--success-color) 0%, #1e7e34 100%) !important;
+    color: white !important;
+    border: none;
+    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #1e7e34 0%, #155724 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
 #containerTable img {
     max-height: 50px;
     width: auto;
