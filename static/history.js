@@ -415,16 +415,16 @@ class HistoryManager {
         const tbody = document.getElementById('historyTableBody');
         
         if (!historyData || historyData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan=\"11\" class=\"text-center text-muted\">No history records found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan=\"12\" class=\"text-center text-muted\">No history records found.</td></tr>';
             return;
         }
-        
+
         tbody.innerHTML = historyData.map(record => {
             // Parse the Czech timezone timestamps
             const reqTime = new Date(record.req_time);
             const fulfilledTime = new Date(record.fulfilled_time);
             const duration = this.formatDuration(record.fulfillment_duration_minutes);
-            
+
             // Format times in Czech locale
             const czechLocaleOptions = {
                 year: 'numeric',
@@ -435,9 +435,17 @@ class HistoryManager {
                 second: '2-digit',
                 timeZone: 'Europe/Prague'
             };
-            
+
+            // Determine request type display (default to PICK_UP for backward compatibility)
+            const requestType = record.request_type || 'PICK_UP';
+            const isPickUp = requestType === 'PICK_UP';
+            const requestTypeBadge = isPickUp ?
+                '<span class=\"badge bg-success\"><i class=\"fas fa-hand-holding-box me-1\"></i>Pick Up</span>' :
+                '<span class=\"badge bg-warning text-dark\"><i class=\"fas fa-undo me-1\"></i>Put Back</span>';
+
             return `
                 <tr>
+                    <td style=\"text-align: center;\">${requestTypeBadge}</td>
                     <td><strong>${record.serial_no}</strong></td>
                     <td>${record.part_no}</td>
                     <td>${record.revision || '-'}</td>
@@ -558,23 +566,25 @@ class HistoryManager {
     
     applyFilters() {
         console.log('🔍 Applying filters...');
-        
+
         this.currentFilters = {};
-        
+
         // Get filter values
         const serialNo = document.getElementById('serialNoFilter').value.trim();
         const partNo = document.getElementById('partNoFilter').value.trim();
+        const requestType = document.getElementById('requestTypeFilter').value;
         const fulfillmentType = document.getElementById('fulfillmentTypeFilter').value;
         const startDate = document.getElementById('startDateFilter').value;
         const endDate = document.getElementById('endDateFilter').value;
-        
+
         // Build filters object
         if (serialNo) this.currentFilters.serial_no = serialNo;
         if (partNo) this.currentFilters.part_no = partNo;
+        if (requestType) this.currentFilters.request_type = requestType;
         if (fulfillmentType) this.currentFilters.fulfillment_type = fulfillmentType;
         if (startDate) this.currentFilters.start_date = startDate + 'T00:00:00';
         if (endDate) this.currentFilters.end_date = endDate + 'T23:59:59';
-        
+
         // Reset to first page and reload
         this.currentPage = 1;
         this.loadHistoryData();

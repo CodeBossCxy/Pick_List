@@ -376,6 +376,19 @@ async def create_history_table():
         ALTER TABLE REQUESTS_HISTORY ADD master_unit_no NVARCHAR(255);
         PRINT 'Added master_unit_no column to REQUESTS_HISTORY table.';
     END
+
+    -- Add request_type column if it doesn't exist (for both REQUESTS and REQUESTS_HISTORY)
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'REQUESTS' AND COLUMN_NAME = 'request_type')
+    BEGIN
+        ALTER TABLE REQUESTS ADD request_type NVARCHAR(50) DEFAULT 'PICK_UP';
+        PRINT 'Added request_type column to REQUESTS table.';
+    END
+
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'REQUESTS_HISTORY' AND COLUMN_NAME = 'request_type')
+    BEGIN
+        ALTER TABLE REQUESTS_HISTORY ADD request_type NVARCHAR(50) DEFAULT 'PICK_UP';
+        PRINT 'Added request_type column to REQUESTS_HISTORY table.';
+    END
     """
     
     try:
@@ -807,16 +820,16 @@ async def get_prod_locations() -> List[str]:
 
 # --- History Logging Functions ---
 
-async def log_request_to_history(req_id: int, serial_no: str, part_no: str, revision: str, quantity: float, 
-                          location: str, deliver_to: str, req_time: datetime, 
-                          current_location: str, fulfillment_type: str = 'auto_cleanup'):
+async def log_request_to_history(req_id: int, serial_no: str, part_no: str, revision: str, quantity: float,
+                          location: str, deliver_to: str, req_time: datetime,
+                          current_location: str, fulfillment_type: str = 'auto_cleanup', request_type: str = 'PICK_UP'):
     """
     Log a fulfilled request to the REQUESTS_HISTORY table
     """
     try:
         # Store fulfilled time in UTC (database should store in UTC)
         fulfilled_time = datetime.utcnow()
-        
+
         # Ensure req_time is in UTC for calculation
         if req_time.tzinfo is None:
             # If req_time is naive, assume it's already UTC (which it should be from our storage)
@@ -824,23 +837,23 @@ async def log_request_to_history(req_id: int, serial_no: str, part_no: str, revi
         else:
             # Convert to UTC for calculation
             req_time_utc = req_time.astimezone(pytz.UTC).replace(tzinfo=None)
-            
+
         # Calculate fulfillment duration in minutes (should be positive)
         duration_minutes = int((fulfilled_time - req_time_utc).total_seconds() / 60)
-        
+
         # Log timing info for debugging
-        logger.info(f"History logging: req_time={req_time_utc}, fulfilled_time={fulfilled_time}, duration={duration_minutes}min")
-        
+        logger.info(f"History logging: req_time={req_time_utc}, fulfilled_time={fulfilled_time}, duration={duration_minutes}min, type={request_type}")
+
         conn = await get_db_connection()
         try:
             cursor = await conn.cursor()
             await cursor.execute("""
-                INSERT INTO REQUESTS_HISTORY 
-                (req_id, serial_no, part_no, revision, quantity, location, deliver_to, 
-                 req_time, fulfilled_time, fulfillment_duration_minutes, fulfillment_type, current_location)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO REQUESTS_HISTORY
+                (req_id, serial_no, part_no, revision, quantity, location, deliver_to,
+                 req_time, fulfilled_time, fulfillment_duration_minutes, fulfillment_type, current_location, request_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (req_id, serial_no, part_no, revision, quantity, location, deliver_to,
-                  req_time, fulfilled_time, duration_minutes, fulfillment_type, current_location))
+                  req_time, fulfilled_time, duration_minutes, fulfillment_type, current_location, request_type))
             await conn.commit()
         finally:
             await release_db_connection(conn)
@@ -893,20 +906,20 @@ async def automated_container_cleanup():
         try:
             cursor = await conn.cursor()
             await cursor.execute("""
-                SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time
+                SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, request_type
                 FROM REQUESTS
                 ORDER BY req_time DESC
             """)
             active_requests = await cursor.fetchall()
         finally:
             await release_db_connection(conn)
-            
+
         logger.info(f"📊 Found {len(active_requests)} active requests to check")
-        
+
         containers_to_remove = []
-        
+
         # Check each active request
-        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time in active_requests:            
+        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time, request_type in active_requests:            
             # Get current location from ERP
             current_location = await check_container_current_location(serial_no)
             
@@ -928,7 +941,7 @@ async def automated_container_cleanup():
                 # Check if current location is in production locations
                 if is_in_prod:
                     logger.warning(f"🎯 FLAGGED FOR DELETION: {serial_no} (current: {current_location})")
-                    
+
                     containers_to_remove.append({
                         'req_id': req_id,
                         'serial_no': serial_no,
@@ -938,7 +951,8 @@ async def automated_container_cleanup():
                         'stored_location': stored_location,
                         'current_location': current_location,
                         'deliver_to': deliver_to,
-                        'req_time': req_time
+                        'req_time': req_time,
+                        'request_type': request_type
                     })
                 else:
                     logger.info(f"📍 KEEPING: {serial_no} (current: {current_location} not in production)")
@@ -978,7 +992,8 @@ async def automated_container_cleanup():
                             deliver_to=container['deliver_to'],
                             req_time=container['req_time'],
                             current_location=container['current_location'],
-                            fulfillment_type='auto_cleanup'
+                            fulfillment_type='auto_cleanup',
+                            request_type=container.get('request_type', 'PICK_UP')
                         )
                         
                         if history_logged:
@@ -1071,14 +1086,14 @@ async def manual_container_cleanup():
             try:
                 cursor = await conn.cursor()
                 await cursor.execute("""
-                    SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time
+                    SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, request_type
                     FROM REQUESTS
                     ORDER BY req_time DESC
                 """)
                 active_requests = await cursor.fetchall()
             finally:
                 await release_db_connection(conn)
-                
+
             results['checked_requests'] = len(active_requests)
             logger.info(f"📊 Found {len(active_requests)} active requests to check")
         except Exception as e:
@@ -1091,11 +1106,11 @@ async def manual_container_cleanup():
                 'checked_requests': 0,
                 'removed_containers': 0
             }
-        
+
         containers_to_remove = []
-        
+
         # Check each request
-        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time in active_requests:
+        for req_id, serial_no, part_no, revision, quantity, stored_location, deliver_to, req_time, request_type in active_requests:
             try:
                 current_location = await check_container_current_location(serial_no)
                 
@@ -1109,7 +1124,8 @@ async def manual_container_cleanup():
                         'stored_location': stored_location,
                         'current_location': current_location,
                         'deliver_to': deliver_to,
-                        'req_time': req_time.isoformat() if isinstance(req_time, datetime) else str(req_time)
+                        'req_time': req_time.isoformat() if isinstance(req_time, datetime) else str(req_time),
+                        'request_type': request_type
                     }
                     containers_to_remove.append(container_info)
                     results['containers_removed'].append(container_info)
@@ -1148,7 +1164,8 @@ async def manual_container_cleanup():
                             deliver_to=container['deliver_to'],
                             req_time=req_time_dt,
                             current_location=container['current_location'],
-                            fulfillment_type='manual_cleanup'
+                            fulfillment_type='manual_cleanup',
+                            request_type=container.get('request_type', 'PICK_UP')
                         )
                         
                         if history_logged:
@@ -1297,10 +1314,14 @@ async def request_serial_no(request: Request, part_no: str, serial_no: str):
         # Get master_unit_no from data if present (optional field)
         master_unit_no = data.get('master_unit_no', None)
 
+        # Get request_type from data (default to 'PICK_UP' for backward compatibility)
+        request_type = data.get('request_type', 'PICK_UP')
+        print(f"Request type: {request_type}")
+
         conn = await get_db_connection()
         try:
             cursor = await conn.cursor()
-            await cursor.execute("INSERT INTO REQUESTS (req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, master_unit_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (req_id, serial_no, part_no, data['revision'], data['quantity'], data['location'], data['workcenter'], req_time_utc, master_unit_no))
+            await cursor.execute("INSERT INTO REQUESTS (req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, master_unit_no, request_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (req_id, serial_no, part_no, data['revision'], data['quantity'], data['location'], data['workcenter'], req_time_utc, master_unit_no, request_type))
             await conn.commit()
 
             if cursor.rowcount == 1:
@@ -1414,6 +1435,9 @@ async def request_master_unit(request: Request, master_unit: str):
         part_no = first_container.get('Part_No', '')
         revision = data.get('revision', '')
 
+        # Get request_type from data (default to 'PICK_UP' for backward compatibility)
+        request_type = data.get('request_type', 'PICK_UP')
+
         # Create a single "virtual" serial number for the master unit display
         master_serial_no = f"MU-{master_unit}"
 
@@ -1426,9 +1450,9 @@ async def request_master_unit(request: Request, master_unit: str):
             cursor = await conn.cursor()
             # Insert single master unit request
             await cursor.execute("""
-                INSERT INTO REQUESTS (req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, master_unit_no)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (req_id, master_serial_no, part_no, revision, total_quantity, location_str, data['workcenter'], req_time_utc, master_unit))
+                INSERT INTO REQUESTS (req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, master_unit_no, request_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (req_id, master_serial_no, part_no, revision, total_quantity, location_str, data['workcenter'], req_time_utc, master_unit, request_type))
             await conn.commit()
 
             if cursor.rowcount == 1:
@@ -1573,17 +1597,17 @@ async def delete_request(serial_no: str):
             
             # First, get the request data before deleting for history logging
             await cursor.execute("""
-                SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time 
-                FROM REQUESTS 
+                SELECT req_id, serial_no, part_no, revision, quantity, location, deliver_to, req_time, request_type
+                FROM REQUESTS
                 WHERE serial_no = ?
             """, (serial_no,))
             request_data = await cursor.fetchone()
-            
+
             if not request_data:
                 raise HTTPException(status_code=404, detail="Request not found")
-            
+
             # Extract the request data
-            req_id, serial_no_db, part_no, revision, quantity, location, deliver_to, req_time = request_data
+            req_id, serial_no_db, part_no, revision, quantity, location, deliver_to, req_time, request_type = request_data
             
             # Log to history before deleting (manual delete - no current_location since we don't know where it went)
             history_logged = await log_request_to_history(
@@ -1596,7 +1620,8 @@ async def delete_request(serial_no: str):
                 deliver_to=deliver_to,
                 req_time=req_time,
                 current_location='Unknown (Manual Delete)',
-                fulfillment_type='manual_delete'
+                fulfillment_type='manual_delete',
+                request_type=request_type or 'PICK_UP'
             )
             
             if not history_logged:

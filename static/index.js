@@ -1,9 +1,10 @@
 // ============================================
-// VERSION: 20251016-master-unit-fix
-// This version uses the NEW /api/request-master-unit endpoint
+// VERSION: 20251104-pick-drop-combined
+// This version combines Pick List and Drop List into one app
+// with dual buttons: Pick Up and Put Back
 // ============================================
-console.log('📦 index.js loaded - Version: 20251016-master-unit-fix');
-console.log('✅ This version includes master unit as single entity fix');
+console.log('📦 index.js loaded - Version: 20251104-pick-drop-combined');
+console.log('✅ This version includes Pick Up / Put Back dual buttons');
 
 // Consolidated API request function for better efficiency and error handling
 async function apiRequest(url, options = {}) {
@@ -419,10 +420,15 @@ function updateContainerTable(data) {
             <td>${item.Quantity}</td>
             <td>${item.Location}</td>
             <td>
-                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-primary'} btn-sm" 
-                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', this)"
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-success'} btn-sm me-1"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PICK_UP', this)"
                         ${item.isRequested ? 'disabled' : ''}>
-                    ${item.isRequested ? 'Requested' : 'Request'}
+                    <i class="fas fa-hand-holding-box"></i> ${item.isRequested ? 'Requested' : 'Pick Up'}
+                </button>
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-warning'} btn-sm"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PUT_BACK', this)"
+                        ${item.isRequested ? 'disabled' : ''}>
+                    <i class="fas fa-undo"></i> ${item.isRequested ? 'Requested' : 'Put Back'}
                 </button>
             </td>
         `;
@@ -566,10 +572,15 @@ function updateContainersTable(data) {
             <td>${item.Quantity}</td>
             <td>${item.Location}</td>
             <td>
-                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-primary'} btn-sm" 
-                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', this)"
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-success'} btn-sm me-1"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PICK_UP', this)"
                         ${item.isRequested ? 'disabled' : ''}>
-                    ${item.isRequested ? 'Requested' : 'Request'}
+                    <i class="fas fa-hand-holding-box"></i> ${item.isRequested ? 'Requested' : 'Pick Up'}
+                </button>
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-warning'} btn-sm"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PUT_BACK', this)"
+                        ${item.isRequested ? 'disabled' : ''}>
+                    <i class="fas fa-undo"></i> ${item.isRequested ? 'Requested' : 'Put Back'}
                 </button>
             </td>
         `;
@@ -676,7 +687,7 @@ function updateMasterUnitTable(containers, masterUnit) {
     containersTable.innerHTML = '';
     console.log('containersTable cleared');
     
-    // Create master unit header with request whole unit button
+    // Create master unit header with request whole unit buttons
     const headerDiv = document.createElement('div');
     headerDiv.className = 'mb-4';
     headerDiv.innerHTML = `
@@ -685,9 +696,14 @@ function updateMasterUnitTable(containers, masterUnit) {
                 <h4 class="mb-1">Master Unit: ${masterUnit}</h4>
                 <p class="mb-0 text-muted">${containers.length} containers found</p>
             </div>
-            <button class="btn btn-success btn-lg" onclick="requestWholeMasterUnit('${masterUnit}', ${JSON.stringify(containers).replace(/"/g, '&quot;')})">
-                <i class="fas fa-check-circle me-2"></i>Request Whole Master Unit
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-lg" onclick="requestWholeMasterUnit('${masterUnit}', ${JSON.stringify(containers).replace(/"/g, '&quot;')}, 'PICK_UP')">
+                    <i class="fas fa-hand-holding-box me-2"></i>Pick Up All
+                </button>
+                <button class="btn btn-warning btn-lg" onclick="requestWholeMasterUnit('${masterUnit}', ${JSON.stringify(containers).replace(/"/g, '&quot;')}, 'PUT_BACK')">
+                    <i class="fas fa-undo me-2"></i>Put Back All
+                </button>
+            </div>
         </div>
     `;
     
@@ -729,10 +745,15 @@ function updateMasterUnitTable(containers, masterUnit) {
             <td>${item.Quantity}</td>
             <td>${item.Location}</td>
             <td>
-                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-primary'} btn-sm" 
-                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', this)"
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-success'} btn-sm me-1"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PICK_UP', this)"
                         ${item.isRequested ? 'disabled' : ''}>
-                    ${item.isRequested ? 'Requested' : 'Request'}
+                    <i class="fas fa-hand-holding-box"></i> ${item.isRequested ? 'Requested' : 'Pick Up'}
+                </button>
+                <button class="btn ${item.isRequested ? 'btn-secondary' : 'btn-warning'} btn-sm"
+                        onclick="handleRequest('${item.Serial_No}', '${item.Part_No}', 'PUT_BACK', this)"
+                        ${item.isRequested ? 'disabled' : ''}>
+                    <i class="fas fa-undo"></i> ${item.isRequested ? 'Requested' : 'Put Back'}
                 </button>
             </td>
         `;
@@ -766,10 +787,11 @@ function updateMasterUnitTable(containers, masterUnit) {
     console.log('=== updateMasterUnitTable END ===\n');
 }
 
-async function requestWholeMasterUnit(masterUnit, containers) {
+async function requestWholeMasterUnit(masterUnit, containers, requestType = 'PICK_UP') {
     console.log('\n🚀 REQUEST WHOLE MASTER UNIT CALLED');
     console.log('- masterUnit:', masterUnit);
     console.log('- containers:', containers);
+    console.log('- requestType:', requestType);
 
     // Get the workcenter value for validation
     const workcenter = document.getElementById('Workcenter-input').value;
@@ -791,14 +813,15 @@ async function requestWholeMasterUnit(masterUnit, containers) {
         return;
     }
 
-    // Confirm the action
-    const confirmMessage = `Request Master Unit ${masterUnit} with ${availableContainers.length} containers as a single unit?`;
+    // Confirm the action with request type
+    const actionText = requestType === 'PICK_UP' ? 'Pick Up' : 'Put Back';
+    const confirmMessage = `${actionText} Master Unit ${masterUnit} with ${availableContainers.length} containers as a single unit?`;
     if (!confirm(confirmMessage)) {
         console.log('🚫 User cancelled master unit request');
         return;
     }
 
-    console.log(`✅ Requesting master unit ${masterUnit} as a single entity`);
+    console.log(`✅ Requesting master unit ${masterUnit} as a single entity (${requestType})`);
 
     // Show progress indicator
     const originalButton = document.querySelector(`button[onclick*="requestWholeMasterUnit"]`);
@@ -811,7 +834,8 @@ async function requestWholeMasterUnit(masterUnit, containers) {
         const requestBody = {
             workcenter: workcenter,
             revision: revision,
-            req_time: new Date().toISOString()
+            req_time: new Date().toISOString(),
+            request_type: requestType
         };
 
         const response = await fetch(`/api/request-master-unit/${encodeURIComponent(masterUnit)}`, {
@@ -870,44 +894,45 @@ async function requestWholeMasterUnit(masterUnit, containers) {
 }
 
 // Function to handle request button click
-async function handleRequest(serialNo, partNo, button) {
+async function handleRequest(serialNo, partNo, requestType, button) {
     console.log('\n🚀 HANDLE REQUEST CALLED');
     console.log('- serialNo:', serialNo);
     console.log('- partNo:', partNo);
+    console.log('- requestType:', requestType);
     console.log('- button:', button);
-    
+
     // Get row element for later use
     const row = document.getElementById(`row-${serialNo}`);
     console.log('- row element found:', !!row);
     console.log('- row ID searched:', `row-${serialNo}`);
-    
+
     if (!row) {
         console.error('❌ Row element not found!');
         alert('Error: Could not find container row');
         return;
     }
-    
+
     try {
         const workcenter = document.getElementById('Workcenter-input').value;
         const revision = document.getElementById('shipper-number-input').value;
-        
+
         console.log('- workcenter:', workcenter);
         console.log('- revision:', revision);
-        
+
         // VALIDATION FIRST - Don't change anything if validation fails
         if (!workcenter) {
             console.log('❌ Validation failed: No workcenter entered');
             alert('Please enter a workcenter');
             return; // Exit without changing button or row state
         }
-        
+
         console.log('✅ Validation passed - proceeding with request');
-        
+
         // NOW that validation passed, update button and row state
         button.disabled = true;
         button.textContent = 'Requested';
         button.className = 'btn btn-secondary btn-sm';
-        
+
         // Add strikethrough to the row
         row.style.textDecoration = 'line-through';
         row.style.opacity = '0.6';
@@ -944,9 +969,10 @@ async function handleRequest(serialNo, partNo, button) {
             revision: revision,
             location: location,
             quantity: quantity,
-            req_time: new Date().toISOString()
+            req_time: new Date().toISOString(),
+            request_type: requestType
         };
-        
+
         console.log('- request body:', requestBody);
         
         // VALIDATION: Check if we have essential data

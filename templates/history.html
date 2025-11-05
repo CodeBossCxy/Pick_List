@@ -95,6 +95,14 @@
                     <input type="text" class="form-control form-control-sm" id="partNoFilter" placeholder="Search...">
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label">Request Type:</label>
+                    <select class="form-select form-select-sm" id="requestTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="PICK_UP">Pick Up</option>
+                        <option value="PUT_BACK">Put Back</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Fulfillment Type:</label>
                     <select class="form-select form-select-sm" id="fulfillmentTypeFilter">
                         <option value="">All Types</option>
@@ -188,6 +196,7 @@
                         <table id="historyTable" class="table table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
+                                    <th>Request Type</th>
                                     <th>Serial No</th>
                                     <th>Part No</th>
                                     <th>Revision</th>
@@ -197,7 +206,7 @@
                                     <th>Requested</th>
                                     <th>Fulfilled</th>
                                     <th>Duration</th>
-                                    <th>Type</th>
+                                    <th>Fulfillment Type</th>
                                     <th>Current Location</th>
                                 </tr>
                             </thead>

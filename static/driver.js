@@ -19,6 +19,17 @@ function createRowElement(data) {
         `<strong style="color: #0066cc;">📦 Master Unit: ${data.master_unit_no || data.serial_no.substring(3)}</strong>` :
         data.serial_no;
 
+    // Determine request type display (default to PICK_UP for backward compatibility)
+    const requestType = data.request_type || 'PICK_UP';
+    const isPickUp = requestType === 'PICK_UP';
+    const typeIcon = isPickUp ?
+        '<i class="fas fa-hand-holding-box text-success"></i>' :
+        '<i class="fas fa-undo text-warning"></i>';
+    const typeText = isPickUp ? 'Pick Up' : 'Put Back';
+    const typeBadge = isPickUp ?
+        '<span class="badge bg-success"><i class="fas fa-hand-holding-box me-1"></i>Pick Up</span>' :
+        '<span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i>Put Back</span>';
+
     // Add special styling for master units
     if (isMasterUnit) {
         row.style.backgroundColor = '#e7f3ff';
@@ -26,6 +37,7 @@ function createRowElement(data) {
     }
 
     row.innerHTML = `
+        <td style="text-align: center;">${typeBadge}</td>
         <td>${displaySerial}</td>
         <td>${data.part_no}</td>
         <td>${data.revision || ''}</td>
