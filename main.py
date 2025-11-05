@@ -1565,8 +1565,8 @@ async def get_all_requests():
             print("Executing SQL query...")
             await cursor.execute("""
                 SELECT *
-                FROM REQUESTS 
-                ORDER BY req_time DESC
+                FROM REQUESTS
+                ORDER BY req_time ASC
             """)
             print("Query executed successfully")
             columns = [column[0] for column in cursor.description]
