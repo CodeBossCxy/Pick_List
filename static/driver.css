@@ -1,43 +1,121 @@
+:root {
+    /* Color Palette */
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --primary-light: #e7f3ff;
+    --success-color: #28a745;
+    --success-light: #d4edda;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --dark-color: #343a40;
+    --light-gray: #f8f9fa;
+    --border-color: #dee2e6;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #D5DDE5;
+    --master-unit-color: #0066cc;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.3s ease;
+}
+
 body, html {
     margin: 0;
     padding: 0;
-    font-family: Nunito, sans-serif;
+    font-family: Nunito, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
 }
 
 .container {
     width: 100%;
     height: 100%;
     position: relative;
-    background: white;
+    background: transparent;
     overflow: hidden;
 }
 
 .logo-fixed {
     position: fixed;
-    top: 10px;
+    top: 20px;
     right: 20px;
     width: 150px;
     height: auto;
-    z-index: 1000;
+    z-index: 1001;
+    filter: drop-shadow(var(--shadow-md));
+    transition: transform var(--transition-base);
+}
+
+.logo-fixed:hover {
+    transform: scale(1.05);
 }
 
 .nav-button {
     padding: 10px 20px;
-    background-color: #007bff;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: white;
     text-decoration: none;
-    border-radius: 5px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-base);
+    display: inline-block;
 }
 
 .nav-button:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, var(--primary-hover) 0%, #003d82 100%);
     color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Navigation buttons wrapper */
+.nav-buttons {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1002;
+    display: flex;
+    gap: 10px;
 }
 
 @media (max-width: 768px) {
+    .nav-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
     .nav-button {
-        top: 60px;
-        left: 20px;
+        font-size: 12px;
+        padding: 8px 14px;
+    }
+
+    .position-fixed[style*="top:80px"] {
+        top: 120px !important;
     }
 }
 
@@ -71,61 +149,68 @@ body, html {
 }
 
 td, th {
-    padding-right: 50px;
-    padding-bottom: 10px;
-    font-size: 24px;
+    padding: 14px 12px;
+    vertical-align: middle;
+}
+
+th {
+    font-weight: 600;
 }
 
 .adding-row td, th {
-    padding-bottom: 10px;
-    padding-right: 50px;
-    padding-left: 20px;
-    font-size: 24px;
+    padding: 14px 12px;
+    font-size: 18px;
 }
 
 #containerTable {
     width: 100%;
-    display: block;
-    font-size: 24px;
+    font-size: 18px;
 }
 
 #containerTableBody {
-    display: block;
+    font-size: 18px;
 }
 
-#containerTable {
-    padding-left: 20px;
-    padding-right: 50px;
-    padding-bottom: 10px;
-    /* display: block; */
-}
 #containerTable tr {
     padding-bottom: 10px;
-    font-size: 24px;
+    font-size: 18px;
 }
-#containerTable th, td {
-    padding-right: 20px;
-    font-size: 24px;
+
+#containerTable th {
+    padding: 16px 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#containerTable td {
+    padding: 14px 12px;
+    font-size: 18px;
 }
 
 .delete-btn {
-    padding: 6px 12px;
-    background-color: #007bff;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 0.875rem;
-    transition: background-color 0.2s;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
 }
 
 .delete-btn:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, var(--primary-hover) 0%, #003d82 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .delete-btn:disabled {
-    background-color: #6c757d;
+    background: var(--text-secondary);
     cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
 }
 
 #containerTable img {
@@ -139,30 +224,65 @@ td, th {
     vertical-align: middle;
 }
 
-/* Table styling */
+/* Enhanced Table styling */
 .table {
     width: 100%;
     margin: 0;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
 }
 
-.table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
+.table thead {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
+}
+
+.table thead th {
+    color: white !important;
+    font-weight: 600;
     text-align: left;
-    padding: 12px;
-    border-bottom: 2px solid #dee2e6;
+    padding: 16px 12px;
+    border: none !important;
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 16px;
+    background: transparent;
 }
 
-.table td tr {
-    padding-right: 20px;
+.table thead tr {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%) !important;
+}
+
+/* Override Bootstrap table defaults */
+.table > :not(caption) > * > * {
+    padding: 0.5rem 0.5rem;
+    background-color: transparent;
+    border-bottom-width: 1px;
+    box-shadow: none;
+}
+
+.table > thead {
+    vertical-align: bottom;
+}
+
+.table td {
+    padding: 14px 12px;
     vertical-align: middle;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr {
+    transition: all var(--transition-base);
 }
 
 .table tbody tr:hover {
-    background-color: #f5f5f5;
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: scale(1.005);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Barcode image styling */
@@ -200,7 +320,7 @@ td, th {
 
 /* Table container styling */
 #containers-table {
-    margin-top: 50px; /* Increased margin to ensure it's below the header box */
+    margin-top: 200px; /* Increased margin to ensure it's below the header box */
     width: 100%;
     padding: 20px;
 }
@@ -281,18 +401,38 @@ td, th {
 
 /* Master Unit Row Styling */
 .master-unit-row {
-    background-color: #e7f3ff !important;
-    border-left: 4px solid #0066cc !important;
+    background: linear-gradient(90deg, rgba(0, 102, 204, 0.1) 0%, transparent 100%) !important;
+    border-left: 5px solid var(--master-unit-color) !important;
+    box-shadow: inset 0 0 20px rgba(0, 102, 204, 0.05);
 }
 
 .master-unit-row:hover {
-    background-color: #d0e7ff !important;
+    background: linear-gradient(90deg, rgba(0, 102, 204, 0.15) 0%, transparent 100%) !important;
+    box-shadow: inset 0 0 30px rgba(0, 102, 204, 0.1), var(--shadow-md);
 }
 
 .master-unit-indicator {
-    color: #0066cc;
-    font-weight: bold;
+    color: var(--master-unit-color);
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 4px 10px;
+    background: rgba(0, 102, 204, 0.1);
+    border-radius: var(--radius-sm);
+}
+
+/* Enhanced Positioning Container */
+.position-fixed.bg-white {
+    background: white !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: var(--shadow-xl) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    z-index: 1000;
+}
+
+.position-fixed h3 {
+    color: var(--text-primary);
+    font-weight: 600;
 }
