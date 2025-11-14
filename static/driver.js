@@ -45,14 +45,24 @@ function createRowElement(data) {
             <i class="fas fa-check me-1"></i>Done
          </button>`;
 
+    // Get the serial number for QR code (use master_unit_no if it's a master unit)
+    const serialForQR = isMasterUnit ? (data.master_unit_no || data.serial_no.substring(3)) : data.serial_no;
+
     row.innerHTML = `
         <td style="text-align: center;">${typeBadge}</td>
         <td>${displaySerial}</td>
+        <td style="text-align: center;">
+            <img src="${getBarcodeUrl(serialForQR)}"
+                 alt="Barcode for ${serialForQR}"
+                 class="barcode-img barcode-clickable"
+                 onclick="showBarcodeModal('${serialForQR}', '${getBarcodeUrl(serialForQR)}')"
+                 title="Click to enlarge">
+        </td>
         <td>${data.part_no}</td>
         <td>${data.revision || ''}</td>
         <td>${data.quantity}</td>
         <td>${data.location}</td>
-        <td>
+        <td style="text-align: center;">
             <img src="${getBarcodeUrl(data.location)}"
                  alt="Barcode for ${data.location}"
                  class="barcode-img barcode-clickable"

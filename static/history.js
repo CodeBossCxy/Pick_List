@@ -18,14 +18,6 @@ class HistoryManager {
         
         this.setupEventListeners();
         this.loadInitialData();
-        
-        // Set default date range (last 7 days)
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 7);
-        
-        document.getElementById('startDateFilter').value = startDate.toISOString().split('T')[0];
-        document.getElementById('endDateFilter').value = endDate.toISOString().split('T')[0];
     }
     
     setupEventListeners() {
@@ -594,19 +586,20 @@ class HistoryManager {
     
     clearFilters() {
         console.log('🧹 Clearing filters...');
-        
+
         // Clear filter inputs
         document.getElementById('serialNoFilter').value = '';
         document.getElementById('partNoFilter').value = '';
+        document.getElementById('requestTypeFilter').value = '';
         document.getElementById('fulfillmentTypeFilter').value = '';
         document.getElementById('startDateFilter').value = '';
         document.getElementById('endDateFilter').value = '';
-        
+
         // Clear filters object and reload
         this.currentFilters = {};
         this.currentPage = 1;
         this.loadHistoryData();
-        
+
         console.log('✅ Filters cleared');
     }
     

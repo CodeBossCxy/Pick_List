@@ -1773,6 +1773,7 @@ async def get_history(
     limit: int = 50,
     serial_no: Optional[str] = None,
     part_no: Optional[str] = None,
+    request_type: Optional[str] = None,
     fulfillment_type: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
@@ -1802,7 +1803,11 @@ async def get_history(
         if part_no:
             where_clauses.append("part_no LIKE ?")
             params.append(f"%{part_no}%")
-            
+
+        if request_type:
+            where_clauses.append("request_type = ?")
+            params.append(request_type)
+
         if fulfillment_type:
             where_clauses.append("fulfillment_type = ?")
             params.append(fulfillment_type)
@@ -1837,9 +1842,9 @@ async def get_history(
             
             # Get paginated results
             data_sql = f"""
-                SELECT history_id, req_id, serial_no, part_no, revision, quantity, 
-                       location, deliver_to, req_time, fulfilled_time, 
-                       fulfillment_duration_minutes, fulfillment_type, current_location
+                SELECT history_id, req_id, serial_no, part_no, revision, quantity,
+                       location, deliver_to, req_time, fulfilled_time,
+                       fulfillment_duration_minutes, fulfillment_type, current_location, request_type
                 FROM REQUESTS_HISTORY 
                 WHERE {where_clause}
                 ORDER BY fulfilled_time DESC
@@ -1884,6 +1889,7 @@ async def get_history(
                 'filters': {
                     'serial_no': serial_no,
                     'part_no': part_no,
+                    'request_type': request_type,
                     'fulfillment_type': fulfillment_type,
                     'start_date': start_date,
                     'end_date': end_date
