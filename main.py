@@ -2268,3 +2268,108 @@ async def manual_database_migration():
             'message': str(e),
             'traceback': traceback.format_exc()
         }, status_code=500)
+
+@app.get("/api/debug/config", response_class=JSONResponse)
+async def debug_config():
+    """
+    Debug endpoint to check configuration without exposing sensitive data
+    """
+    try:
+        return JSONResponse(content={
+            'status': 'ok',
+            'config': {
+                'ERP_API_BASE': AppConfig.ERP_API_BASE,
+                'PLEX_USERNAME': AppConfig.PLEX_USERNAME,
+                'PLEX_PASSWORD_SET': bool(AppConfig.PLEX_PASSWORD),
+                'DB_SERVER': os.getenv('AZURE_SQL_SERVER', 'NOT_SET'),
+                'DB_DATABASE': os.getenv('AZURE_SQL_DATABASE', 'NOT_SET'),
+                'DB_USERNAME': os.getenv('AZURE_SQL_USERNAME', 'NOT_SET'),
+                'DB_PASSWORD_SET': bool(os.getenv('AZURE_SQL_PASSWORD')),
+                'ENV_FILE_EXISTS': os.path.exists('.env')
+            }
+        })
+    except Exception as e:
+        return JSONResponse(content={
+            'status': 'error',
+            'message': str(e)
+        }, status_code=500)
+
+@app.get("/api/debug/test-serial/{serial_no}", response_class=JSONResponse)
+async def debug_test_serial(serial_no: str):
+    """
+    Debug endpoint to test serial number lookup with detailed logging
+    """
+    try:
+        logger.info(f"[DEBUG] Testing serial number: {serial_no}")
+        logger.info(f"[DEBUG] ERP_API_BASE: {AppConfig.ERP_API_BASE}")
+        logger.info(f"[DEBUG] PLEX_USERNAME: {AppConfig.PLEX_USERNAME}")
+
+        # Check if it's in the database
+        in_requests = False
+        in_history = False
+        try:
+            conn = await get_db_connection()
+            cursor = await conn.cursor()
+
+            await cursor.execute("SELECT COUNT(*) FROM REQUESTS WHERE serial_no = ?", (serial_no,))
+            requests_count = (await cursor.fetchone())[0]
+            in_requests = requests_count > 0
+
+            await cursor.execute("SELECT COUNT(*) FROM REQUESTS_HISTORY WHERE serial_no = ?", (serial_no,))
+            history_count = (await cursor.fetchone())[0]
+            in_history = history_count > 0
+
+            await cursor.close()
+            await release_db_connection(conn)
+        except Exception as db_error:
+            logger.warning(f"[DEBUG] Database check failed: {db_error}")
+
+        container_by_serial_no_id = 4619
+        url = f"{AppConfig.ERP_API_BASE}{container_by_serial_no_id}/execute"
+        payload = {"inputs": {"Serial_No": serial_no}}
+
+        logger.info(f"[DEBUG] Request URL: {url}")
+        logger.info(f"[DEBUG] Request Payload: {payload}")
+
+        client = await get_http_client()
+        response = await client.post(url, headers=headers, json=payload)
+
+        logger.info(f"[DEBUG] Response Status: {response.status_code}")
+        logger.info(f"[DEBUG] Response Headers: {dict(response.headers)}")
+
+        response_data = response.json()
+        logger.info(f"[DEBUG] Response Data: {response_data}")
+
+        # Parse the response like the actual function does
+        processed_data = []
+        try:
+            columns = response_data.get("tables")[0].get("columns", [])
+            rows = response_data.get("tables")[0].get("rows", [])
+            df = pd.DataFrame(rows, columns=columns)
+            processed_data = df.to_dict(orient="records")
+        except Exception as parse_error:
+            logger.error(f"[DEBUG] Failed to parse response: {parse_error}")
+
+        return JSONResponse(content={
+            'status': 'ok',
+            'serial_no': serial_no,
+            'database_checks': {
+                'in_requests_table': in_requests,
+                'in_history_table': in_history
+            },
+            'plex_api': {
+                'url': url,
+                'response_status': response.status_code,
+                'raw_response': response_data,
+                'processed_data': processed_data,
+                'data_count': len(processed_data)
+            }
+        })
+    except Exception as e:
+        logger.error(f"[DEBUG] Error: {e}")
+        import traceback
+        return JSONResponse(content={
+            'status': 'error',
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }, status_code=500)

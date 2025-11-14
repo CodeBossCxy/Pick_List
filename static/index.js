@@ -531,9 +531,13 @@ function updateContainersTable(data) {
     const containersTable = document.getElementById('containers-table');
     console.log('containersTable element found:', !!containersTable);
 
+    // Clear existing content
+    containersTable.innerHTML = '';
+    console.log('containersTable cleared');
+
     // Use DocumentFragment for efficient DOM updates
     const fragment = document.createDocumentFragment();
-    
+
     // Create table
     const table = document.createElement('table');
     table.className = 'table table-hover mt-5'; // Removed table-striped to avoid conflicts
