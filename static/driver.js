@@ -5,7 +5,7 @@ const messages = document.getElementById("messages");
 
 // Function to get barcode image URL for a location
 function getBarcodeUrl(location) {
-    return `https://barcode.orcascan.com/?type=qr&data=${location}`;
+    return `https://barcode.orcascan.com/?type=code128&data=${location}`;
 }
 
 // Function to create a row element
@@ -87,13 +87,13 @@ function showBarcodeModal(location, barcodeUrl) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="barcodeModalLabel">
-                            <i class="fas fa-qrcode me-2"></i>Location: ${location}
+                            <i class="fas fa-barcode me-2"></i>Location: ${location}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center p-4">
                         <img src="${barcodeUrl}" alt="Barcode for ${location}" class="barcode-modal-img">
-                        <p class="mt-3 text-muted">Scan this QR code to navigate to location: <strong>${location}</strong></p>
+                        <p class="mt-3 text-muted">Scan this barcode to navigate to location: <strong>${location}</strong></p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
